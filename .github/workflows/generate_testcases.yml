@@ -24,7 +24,7 @@ jobs:
 
       - name: Run test case generator
         env:
-          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python generate_testcases.py
 
       - name: Commit generated test cases
