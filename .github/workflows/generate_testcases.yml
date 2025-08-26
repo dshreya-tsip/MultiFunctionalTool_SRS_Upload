@@ -1,0 +1,25 @@
+name: Auto Generate Test Cases
+
+on:
+  push:
+    paths:
+      - 'SRS.docx'
+
+jobs:
+  generate-testcases:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install openpyxl python-docx
+
+      - name: Run test case generator
+        run: python generate_testcases.py
