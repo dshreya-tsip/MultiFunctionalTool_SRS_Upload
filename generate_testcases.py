@@ -1,69 +1,61 @@
+import os
 import docx
 import openpyxl
+import requests
 
 # Step 1: Extract text from SRS.docx
 def extract_srs_text(doc_path):
     doc = docx.Document(doc_path)
     return "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
 
-# Step 2: Generate test cases using Claude-style prompt logic
-def generate_test_cases(srs_text):
-    # Claude-style prompt embedded in function
+# Step 2: Send prompt to Claude API
+def get_testcases_from_claude(srs_text):
     prompt = (
         "Read the uploaded Software Requirements Specification (SRS.docx) and generate both "
         "functional and non-functional test cases. Populate the results into the provided "
         "TestCases_Template.xlsx document. Functional test cases should cover all described features, "
         "while non-functional test cases should address performance, usability, and compatibility. "
-        "Return the completed Excel file for review and integration.\n\n"
+        "Return the test cases in markdown table format with columns: "
+        "`Test Case ID`, `Preconditions`, `Test Condition`, `Steps with description`, `Expected Result`, `Actual Result`, `Remarks`.\n\n"
         "SRS Content:\n" + srs_text
     )
-    print("Prompt to Claude:\n", prompt)  # Optional: log the prompt
 
-    # Simulated parsing of SRS to extract functional features
-    functional_features = []
-    current_title = ""
-    for line in srs_text.splitlines():
-        line = line.strip()
-        if line.startswith("4.") and len(line.split()) > 1:
-            current_title = line
-        elif current_title and line:
-            functional_features.append((current_title, line))
-            current_title = ""
+    headers = {
+        "x-api-key": os.getenv("CLAUDE_API_KEY"),
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json"
+    }
 
-    # Non-functional features
-    non_functional_features = [
-        ("Performance", "Measure time taken to complete all diagnostic operations", "Operations complete within acceptable time limits"),
-        ("Usability", "Verify GUI layout and ease of use for all features", "User interface is intuitive and easy to navigate"),
-        ("Compatibility", "Run tool on both desktop and laptop environments", "Tool functions correctly on all supported platforms")
-    ]
+    payload = {
+        "model": "claude-3-7-sonnet-20250219",
+        "max_tokens": 1000,
+        "temperature": 0.3,
+        "messages": [
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+    }
 
-    # Generate test cases
+    response = requests.post("https://api.anthropic.com/v1/messages", json=payload, headers=headers)
+    response.raise_for_status()
+    return response.json()["content"]
+
+# Step 3: Parse markdown table into structured test cases
+def parse_markdown_table(md_text):
+    lines = [line for line in md_text.splitlines() if "|" in line]
+    headers = [h.strip() for h in lines[0].split("|")[1:-1]]
     test_cases = []
-    for i, (title, description) in enumerate(functional_features, start=1):
-        test_cases.append({
-            "Test Case ID": f"TC_FUNC_{i:03}",
-            "Preconditions": "Tool installed and accessible",
-            "Test Condition": title,
-            "Steps with description": f"Verify functionality: {description}",
-            "Expected Result": f"{title} works as expected",
-            "Actual Result": "Not Executed",
-            "Remarks": ""
-        })
 
-    for j, (condition, steps, expected) in enumerate(non_functional_features, start=1):
-        test_cases.append({
-            "Test Case ID": f"TC_NONFUNC_{j:03}",
-            "Preconditions": "Tool installed and running",
-            "Test Condition": condition,
-            "Steps with description": steps,
-            "Expected Result": expected,
-            "Actual Result": "Not Executed",
-            "Remarks": ""
-        })
+    for line in lines[2:]:  # skip header and separator
+        values = [v.strip() for v in line.split("|")[1:-1]]
+        test_case = dict(zip(headers, values))
+        test_cases.append(test_case)
 
     return test_cases
 
-# Step 3: Fill test cases into Excel template
+# Step 4: Fill test cases into Excel template
 def fill_excel_template(test_cases, template_path, output_path):
     wb = openpyxl.load_workbook(template_path)
     ws = wb["Testcases"]
@@ -71,17 +63,18 @@ def fill_excel_template(test_cases, template_path, output_path):
 
     for i, tc in enumerate(test_cases):
         row = start_row + i
-        ws.cell(row=row, column=2, value=tc["Test Case ID"])
-        ws.cell(row=row, column=3, value=tc["Preconditions"])
-        ws.cell(row=row, column=4, value=tc["Test Condition"])
-        ws.cell(row=row, column=5, value=tc["Steps with description"])
-        ws.cell(row=row, column=6, value=tc["Expected Result"])
-        ws.cell(row=row, column=7, value=tc["Actual Result"])
-        ws.cell(row=row, column=8, value=tc["Remarks"])
+        ws.cell(row=row, column=2, value=tc.get("Test Case ID"))
+        ws.cell(row=row, column=3, value=tc.get("Preconditions"))
+        ws.cell(row=row, column=4, value=tc.get("Test Condition"))
+        ws.cell(row=row, column=5, value=tc.get("Steps with description"))
+        ws.cell(row=row, column=6, value=tc.get("Expected Result"))
+        ws.cell(row=row, column=7, value=tc.get("Actual Result"))
+        ws.cell(row=row, column=8, value=tc.get("Remarks"))
 
     wb.save(output_path)
 
 # Main execution
 srs_text = extract_srs_text("SRS.docx")
-test_cases = generate_test_cases(srs_text)
+md_testcases = get_testcases_from_claude(srs_text)
+test_cases = parse_markdown_table(md_testcases)
 fill_excel_template(test_cases, "TestCases_Template.xlsx", "Generated_TestCases.xlsx")
