@@ -10,6 +10,10 @@ def extract_srs_text(doc_path):
 
 # Step 2: Send prompt to Claude API
 def get_testcases_from_claude(srs_text):
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise ValueError("Missing Anthropic API key. Set ANTHROPIC_API_KEY environment variable.")
+
     prompt = (
         "Read the uploaded Software Requirements Specification (SRS.docx) and generate both "
         "functional and non-functional test cases. Populate the results into the provided "
@@ -21,7 +25,7 @@ def get_testcases_from_claude(srs_text):
     )
 
     headers = {
-        "x-api-key": os.getenv("CLAUDE_API_KEY"),
+        "x-api-key": api_key,
         "anthropic-version": "2023-06-01",
         "content-type": "application/json"
     }
