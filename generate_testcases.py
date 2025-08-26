@@ -48,7 +48,10 @@ def get_testcases_from_claude(srs_text):
 
 # Step 3: Parse markdown table into structured test cases
 def parse_markdown_table(md_text):
+    if isinstance(md_text, list):
+        md_text = "\n".join(md_text)
     lines = [line for line in md_text.splitlines() if "|" in line]
+
     headers = [h.strip() for h in lines[0].split("|")[1:-1]]
     test_cases = []
 
