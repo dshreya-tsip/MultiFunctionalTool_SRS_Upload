@@ -23,3 +23,11 @@ jobs:
 
       - name: Run test case generator
         run: python generate_testcases.py
+
+      - name: Commit generated test cases
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git add Generated_TestCases.xlsx
+          git commit -m 'Add generated test cases'
+          git push
