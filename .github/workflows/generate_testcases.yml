@@ -8,6 +8,7 @@ on:
 jobs:
   generate-testcases:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -19,9 +20,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install openpyxl python-docx
+          pip install openpyxl python-docx requests
 
       - name: Run test case generator
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
         run: python generate_testcases.py
 
       - name: Commit generated test cases
@@ -29,5 +32,5 @@ jobs:
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
           git add Generated_TestCases.xlsx
-          git commit -m 'Add generated test cases'
+          git commit -m 'Add generated test cases from Claude'
           git push
