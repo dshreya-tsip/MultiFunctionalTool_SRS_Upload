@@ -50,7 +50,11 @@ def get_testcases_from_claude(srs_text):
 def parse_markdown_table(md_text):
     if isinstance(md_text, list):
         md_text = "\n".join(md_text)
+    elif not isinstance(md_text, str):
+        raise TypeError(f"Expected md_text to be a string, got {type(md_text)}")
+    
     lines = [line for line in md_text.splitlines() if "|" in line]
+    return lines
 
     headers = [h.strip() for h in lines[0].split("|")[1:-1]]
     test_cases = []
