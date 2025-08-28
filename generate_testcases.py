@@ -49,12 +49,19 @@ def get_testcases_from_claude(srs_text):
 # Step 3: Parse markdown table into structured test cases
 def parse_markdown_table(md_text):
     if isinstance(md_text, list):
-        md_text = "\n".join(md_text)
+        if all(isinstance(item, dict) for item in md_text):
+            # Already structured test cases
+            return md_text
+        else:
+            # Convert list of strings to a single markdown string
+            md_text = "\n".join(str(item) for item in md_text)
     elif not isinstance(md_text, str):
-        raise TypeError(f"Expected md_text to be a string, got {type(md_text)}")
-    
+        raise TypeError(f"Expected md_text to be a string or list of dicts, got {type(md_text)}")
+
     lines = [line for line in md_text.splitlines() if "|" in line]
-    
+    if len(lines) < 3:
+        raise ValueError("Markdown table format is invalid or incomplete.")
+
     headers = [h.strip() for h in lines[0].split("|")[1:-1]]
     test_cases = []
 
