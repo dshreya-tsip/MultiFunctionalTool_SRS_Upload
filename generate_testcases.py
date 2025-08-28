@@ -54,8 +54,7 @@ def parse_markdown_table(md_text):
         raise TypeError(f"Expected md_text to be a string, got {type(md_text)}")
     
     lines = [line for line in md_text.splitlines() if "|" in line]
-    return lines
-
+    
     headers = [h.strip() for h in lines[0].split("|")[1:-1]]
     test_cases = []
 
