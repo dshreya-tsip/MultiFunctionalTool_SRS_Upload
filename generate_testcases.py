@@ -20,7 +20,8 @@ def get_testcases_from_claude(srs_text):
         "TestCases_Template.xlsx document. Functional test cases should cover all described features, "
         "while non-functional test cases should address performance, usability, and compatibility. "
         "Return the test cases in markdown table format with columns: "
-        "`Test Case ID`, `Preconditions`, `Test Condition`, `Steps with description`, `Expected Result`, `Actual Result`, `Remarks`.\n\n"
+        "`Test Case ID`, `Preconditions`, `Test Condition`, `Steps with description`, "
+        "`Expected Result`, `Actual Result`, `Remarks`.\n\n"
         "SRS Content:\n" + srs_text
     )
 
@@ -32,28 +33,36 @@ def get_testcases_from_claude(srs_text):
 
     payload = {
         "model": "claude-3-7-sonnet-20250219",
-        "max_tokens": 1000,
+        "max_tokens": 1500,
         "temperature": 0.3,
         "messages": [
-            {
-                "role": "user",
-                "content": prompt
-            }
+            {"role": "user", "content": prompt}
         ]
     }
 
     response = requests.post("https://api.anthropic.com/v1/messages", json=payload, headers=headers)
     response.raise_for_status()
-    return response.json()["content"]
+
+    result = response.json()
+
+    # ✅ Extract only text blocks from Claude response
+    md_text = "\n".join(
+        block["text"] for block in result["content"] if block["type"] == "text"
+    )
+
+    # Debug: print raw output (can be removed later)
+    print("\n--- Claude Response (Markdown Table) ---\n")
+    print(md_text[:1000])  # show first 1000 chars for safety
+    print("\n---------------------------------------\n")
+
+    return md_text
 
 # Step 3: Parse markdown table into structured test cases
 def parse_markdown_table(md_text):
     if isinstance(md_text, list):
         if all(isinstance(item, dict) for item in md_text):
-            # Already structured test cases
             return md_text
         else:
-            # Convert list of strings to a single markdown string
             md_text = "\n".join(str(item) for item in md_text)
     elif not isinstance(md_text, str):
         raise TypeError(f"Expected md_text to be a string or list of dicts, got {type(md_text)}")
@@ -65,10 +74,11 @@ def parse_markdown_table(md_text):
     headers = [h.strip() for h in lines[0].split("|")[1:-1]]
     test_cases = []
 
-    for line in lines[2:]:  # skip header and separator
+    for line in lines[2:]:  # skip header + separator
         values = [v.strip() for v in line.split("|")[1:-1]]
-        test_case = dict(zip(headers, values))
-        test_cases.append(test_case)
+        if len(values) == len(headers):
+            test_case = dict(zip(headers, values))
+            test_cases.append(test_case)
 
     return test_cases
 
@@ -91,7 +101,9 @@ def fill_excel_template(test_cases, template_path, output_path):
     wb.save(output_path)
 
 # Main execution
-srs_text = extract_srs_text("SRS.docx")
-md_testcases = get_testcases_from_claude(srs_text)
-test_cases = parse_markdown_table(md_testcases)
-fill_excel_template(test_cases, "TestCases_Template.xlsx", "Generated_TestCases.xlsx")
+if __name__ == "__main__":
+    srs_text = extract_srs_text("SRS.docx")
+    md_testcases = get_testcases_from_claude(srs_text)
+    test_cases = parse_markdown_table(md_testcases)
+    fill_excel_template(test_cases, "TestCases_Template.xlsx", "Generated_TestCases.xlsx")
+    print("✅ Test cases generated successfully: Generated_TestCases.xlsx")
