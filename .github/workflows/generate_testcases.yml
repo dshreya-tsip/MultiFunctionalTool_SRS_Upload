@@ -5,7 +5,8 @@ on:
   push:
     paths:
       - 'SRS.docx'
-
+      - 'generate_testcases.py'
+      - '.github/workflows/generate_testcases.yml'
 jobs:
   generate-testcases:
     runs-on: ubuntu-latest
