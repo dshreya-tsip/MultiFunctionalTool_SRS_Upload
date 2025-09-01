@@ -16,32 +16,54 @@ def extract_srs_text(doc_path: str) -> str:
 # Step 2: Build prompt for Claude
 # -------------------------------
 def build_prompt(srs_text: str) -> str:
+
     return (
+
         "Read the uploaded Software Requirements Specification (SRS.docx).\n"
+
         "You MUST output exactly two parts in this order:\n"
+
         "1) A single line in the exact format:\n"
+
         "   Component: <detected overall component/module/system name from the SRS>\n"
-        "   (Put only this line first. No code fences, no extra text before it.)\n"
+
+        "   (Put this in first line. No code fences, no extra text before it. After this in next line let it continue from the TestCases_Template.xlsx)\n"
+
         "2) A blank line, followed immediately by a single markdown table of test cases.\n\n"
+ 
+        "⚠️ IMPORTANT: Generate the **maximum possible coverage of test cases** from the SRS.\n"
 
-        "Generate both functional and non-functional test cases. Functional test cases should cover "
-        "all described features; once completed, continue numbering with non-functional test cases "
-        "(performance, usability, compatibility) WITHOUT adding any new section headers or titles. "
-        "All test cases must be in ONE continuous markdown table with sequential numbering for "
-        "`Test Case ID` (e.g., TC001, TC002, ...).\n\n"
+        "- Include **all functional test cases** (for every requirement, feature, rule, and exception).\n"
 
+        "- Include **all non-functional test cases** (performance, usability, security, reliability, "
+
+        "compatibility, accessibility, compliance, installation, recovery, etc.).\n"
+
+        "- Include **negative test cases** (invalid inputs, boundary conditions, failure handling).\n"
+
+        "- Include **edge cases, stress cases, and corner cases**.\n"
+
+        "- Do not skip any scenario implied in the SRS, even if not explicitly written.\n\n"
+ 
+        "Number test cases sequentially across all categories with IDs like `TC001`, `TC002`, etc.\n"
+
+        "All test cases must be in ONE continuous markdown table with no breaks or section headers.\n\n"
+ 
         "Return the markdown table with columns exactly named:\n"
+
         "`Test Case ID` | `Preconditions` | `Test Condition` | `Steps with description` | "
+
         "`Expected Result` | `Actual Result` | `Remarks`\n\n"
-
+ 
         "Notes for the header block in the Excel sheet (handled by my program):\n"
+
         "- The line you output as 'Component: <name>' will be written into the header's Component field.\n"
-        "- `Build`, `Date`, and `Target` will remain blank.\n\n"
 
+        "- After 'Component: <name>', `Build:`, `Date:`, and `Target:` heading will remain blank.\n\n"
+ 
         "SRS Content:\n" + srs_text
+
     )
-
-
 # -------------------------------
 # Step 3: Send prompt to Claude API
 # -------------------------------
