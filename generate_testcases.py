@@ -32,7 +32,10 @@ def build_prompt(srs_text: str) -> str:
         "- Include **edge cases, stress cases, and corner cases**.\n"
         "- Include **ad-hoc / exploratory test cases** (unplanned scenarios, random inputs, unusual user flows) "
         "to capture potential gaps not explicitly described in the SRS.\n"
-        "- Do not skip any scenario implied in the SRS, even if not explicitly written.\n\n"
+        "- Do not skip any scenario implied in the SRS, even if not explicitly written.\n"
+        "- ✅ Explicitly include **network-related test cases** covering both **IPv4 and IPv6** scenarios "
+        "(connectivity, compatibility, fallback, error handling, dual-stack behavior, invalid IP inputs, "
+        "performance with IPv4 vs IPv6, security, and edge cases).\n\n"
 
         "Number test cases sequentially across all categories with IDs like `TC001`, `TC002`, etc.\n"
         "All test cases must be in ONE continuous markdown table with no breaks or section headers.\n\n"
@@ -47,6 +50,7 @@ def build_prompt(srs_text: str) -> str:
 
         "SRS Content:\n" + srs_text
     )
+
 
 
 
