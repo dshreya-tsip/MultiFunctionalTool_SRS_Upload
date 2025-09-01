@@ -22,8 +22,10 @@ def get_testcases_from_claude(srs_text):
     "and compatibility) without adding any new section headers or titles. "
     "All test cases must be placed in a single continuous markdown table with sequential numbering "
     "for `Test Case ID` (e.g., TC001, TC002, ...). "
-    "\n\nAt the top of the sheet, fill the header fields: "
-    "- `Component`: choose the most suitable overall component/module name from the SRS "
+    "\n\nIMPORTANT: From the SRS, identify the most suitable overall module or system name and "
+    "populate it into the `Component:` field in the header section of the test case document. "
+    "- `Component`: auto-fill with the appropriate name (e.g., Login Module, Print Service, "
+    "MultiFunctionalTool, etc. depending on the SRS content). "
     "- `MFP`: use 'Any' if not specified "
     "- `Build`, `Date`, `Target`: leave blank "
     "\n\nReturn the test cases in markdown table format with columns: "
@@ -31,6 +33,7 @@ def get_testcases_from_claude(srs_text):
     "`Expected Result`, `Actual Result`, `Remarks`.\n\n"
     "SRS Content:\n" + srs_text
 )
+
 
 
 
