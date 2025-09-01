@@ -23,21 +23,28 @@ def build_prompt(srs_text: str) -> str:
         "   Component: <detected overall component/module/system name from the SRS>\n"
         "   (Put only this line first. No code fences, no extra text before it.)\n"
         "2) A blank line, followed immediately by a single markdown table of test cases.\n\n"
-        "⚠️ IMPORTANT: Generate **approximately 100 test cases** to ensure maximum coverage.\n"
+
+        "⚠️ IMPORTANT: Generate the **maximum possible coverage of test cases** from the SRS.\n"
         "- Include **all functional test cases** (for every requirement, feature, rule, and exception).\n"
         "- Include **all non-functional test cases** (performance, usability, security, reliability, "
         "compatibility, accessibility, compliance, installation, recovery, etc.).\n"
         "- Include **negative test cases** (invalid inputs, boundary conditions, failure handling).\n"
         "- Include **edge cases, stress cases, and corner cases**.\n"
+        "- Include **ad-hoc / exploratory test cases** (unplanned scenarios, random inputs, unusual user flows) "
+        "to capture potential gaps not explicitly described in the SRS.\n"
         "- Do not skip any scenario implied in the SRS, even if not explicitly written.\n\n"
+
         "Number test cases sequentially across all categories with IDs like `TC001`, `TC002`, etc.\n"
         "All test cases must be in ONE continuous markdown table with no breaks or section headers.\n\n"
+
         "Return the markdown table with columns exactly named:\n"
         "`Test Case ID` | `Preconditions` | `Test Condition` | `Steps with description` | "
         "`Expected Result` | `Actual Result` | `Remarks`\n\n"
+
         "Notes for the header block in the Excel sheet (handled by my program):\n"
         "- The line you output as 'Component: <name>' will be written into the header's Component field.\n"
         "- `Build`, `Date`, and `Target` will remain blank.\n\n"
+
         "SRS Content:\n" + srs_text
     )
 
