@@ -4,7 +4,6 @@ import docx
 import openpyxl
 import requests
 
-
 # -------------------------------
 # Step 1: Extract text from SRS.docx
 # -------------------------------
