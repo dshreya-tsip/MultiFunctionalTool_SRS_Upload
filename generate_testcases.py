@@ -60,7 +60,7 @@ def get_testcases_from_claude(srs_text: str) -> str:
 
     payload = {
         "model": "claude-3-7-sonnet-20250219",
-        "max_tokens": 3000,
+        "max_tokens": 8000,
         "temperature": 0.3,
         "messages": [
             {"role": "user", "content": prompt}
