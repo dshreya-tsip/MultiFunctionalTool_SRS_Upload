@@ -15,15 +15,17 @@ def get_testcases_from_claude(srs_text):
         raise ValueError("Missing Anthropic API key. Set ANTHROPIC_API_KEY environment variable.")
 
     prompt = (
-        "Read the uploaded Software Requirements Specification (SRS.docx) and generate both "
-        "functional and non-functional test cases. Populate the results into the provided "
-        "TestCases_Template.xlsx document. Functional test cases should cover all described features, "
-        "while non-functional test cases should address performance, usability, and compatibility. "
-        "Return the test cases in markdown table format with columns: "
-        "`Test Case ID`, `Preconditions`, `Test Condition`, `Steps with description`, "
-        "`Expected Result`, `Actual Result`, `Remarks`.\n\n"
-        "SRS Content:\n" + srs_text
-    )
+    "Read the uploaded Software Requirements Specification (SRS.docx) and generate both "
+    "functional and non-functional test cases. Populate the results into the provided "
+    "TestCases_Template.xlsx document. Functional test cases should cover all described features, "
+    "and once completed, continue numbering with non-functional test cases (performance, usability, "
+    "and compatibility) without adding any new section headers or titles. "
+    "Return the test cases in markdown table format with columns: "
+    "`Test Case ID`, `Preconditions`, `Test Condition`, `Steps with description`, "
+    "`Expected Result`, `Actual Result`, `Remarks`.\n\n"
+    "SRS Content:\n" + srs_text
+)
+
 
     headers = {
         "x-api-key": api_key,
