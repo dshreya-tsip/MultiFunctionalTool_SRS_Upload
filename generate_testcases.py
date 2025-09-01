@@ -6,91 +6,117 @@ import requests
 # Step 1: Extract text from SRS.docx
 def extract_srs_text(doc_path):
     doc = docx.Document(doc_path)
-    return "\n".join([para.text for para in doc.paragraphs if para.text])
+    return "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
 
-# Step 2: Generate test cases using Claude API
-def generate_testcases(srs_text, component_name):
-    CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
-    if not CLAUDE_API_KEY:
-        raise ValueError("Claude API key not set. Use: export CLAUDE_API_KEY='your_key_here'")
+# Step 2: Send prompt to Claude API
+def get_testcases_from_claude(srs_text):
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise ValueError("Missing Anthropic API key. Set ANTHROPIC_API_KEY environment variable.")
 
-    prompt = f"""
-You are a test engineer. Based on the following Software Requirement Specification (SRS), 
-generate detailed functional and negative test cases. Ensure each test case has:
+    prompt = (
+    "Read the uploaded Software Requirements Specification (SRS.docx) and generate both "
+    "functional and non-functional test cases. Populate the results into the provided "
+    "TestCases_Template.xlsx document. Functional test cases should cover all described features, "
+    "and once completed, continue numbering with non-functional test cases (performance, usability, "
+    "and compatibility) without adding any new section headers or titles. "
+    "All test cases must be placed in a single continuous markdown table with sequential numbering "
+    "for `Test Case ID` (e.g., TC001, TC002, ...). "
+    "\n\nIMPORTANT: From the SRS, identify the most suitable overall module or system name and "
+    "populate it into the `Component:` field in the header section of the test case document. "
+    "- `Component`: auto-fill with the appropriate name (e.g., Login Module, Print Service, "
+    "MultiFunctionalTool, etc. depending on the SRS content). "
+    "- `MFP`: use 'Any' if not specified "
+    "- `Build`, `Date`, `Target`: leave blank "
+    "\n\nReturn the test cases in markdown table format with columns: "
+    "`Test Case ID`, `Preconditions`, `Test Condition`, `Steps with description`, "
+    "`Expected Result`, `Actual Result`, `Remarks`.\n\n"
+    "SRS Content:\n" + srs_text
+)
 
-1. Test Case ID (format: nf001, nf002, … for negative cases; f001, f002, … for functional cases)
-2. Description
-3. Preconditions
-4. Test Steps
-5. Expected Result
-6. Actual Result (keep blank)
-7. Status (keep blank)
 
-SRS:
-{srs_text}
-"""
+
+
 
     headers = {
-        "x-api-key": CLAUDE_API_KEY,
-        "Content-Type": "application/json",
+        "x-api-key": api_key,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json"
     }
 
-    data = {
-        "model": "claude-3-sonnet-20240229",
-        "max_tokens": 1000,
-        "temperature": 0,
+    payload = {
+        "model": "claude-3-7-sonnet-20250219",
+        "max_tokens": 1500,
+        "temperature": 0.3,
         "messages": [
             {"role": "user", "content": prompt}
-        ],
+        ]
     }
 
-    response = requests.post("https://api.anthropic.com/v1/messages", headers=headers, json=data)
+    response = requests.post("https://api.anthropic.com/v1/messages", json=payload, headers=headers)
     response.raise_for_status()
-    return response.json()["content"][0]["text"]
 
-# Step 3: Save test cases into Excel (with header section preserved)
-def save_to_excel(testcases_text, output_path, component_name):
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Test Cases"
+    result = response.json()
 
-    # --- Header Section ---
-    ws["A1"] = "Build:"
-    ws["C1"] = "Date:"
-    ws["E1"] = "Target:"
-    ws["G1"] = "Component Name:"
-    ws["H1"] = component_name  # Insert Component Name here
-    ws["A2"] = "MFP Details:"
+    # ✅ Extract only text blocks from Claude response
+    md_text = "\n".join(
+        block["text"] for block in result["content"] if block["type"] == "text"
+    )
 
-    # --- Table Header ---
-    headers = [
-        "Test Case ID", "Description", "Preconditions",
-        "Test Steps", "Expected Result", "Actual Result", "Status"
-    ]
-    ws.append(headers)
+    # Debug: print raw output (can be removed later)
+    print("\n--- Claude Response (Markdown Table) ---\n")
+    print(md_text[:1000])  # show first 1000 chars for safety
+    print("\n---------------------------------------\n")
 
-    # --- Parse test cases ---
-    for line in testcases_text.split("\n"):
-        if line.strip():
-            parts = [p.strip() for p in line.split("|")]
-            if len(parts) >= 7:
-                ws.append(parts[:7])
+    return md_text
+
+# Step 3: Parse markdown table into structured test cases
+def parse_markdown_table(md_text):
+    if isinstance(md_text, list):
+        if all(isinstance(item, dict) for item in md_text):
+            return md_text
+        else:
+            md_text = "\n".join(str(item) for item in md_text)
+    elif not isinstance(md_text, str):
+        raise TypeError(f"Expected md_text to be a string or list of dicts, got {type(md_text)}")
+
+    lines = [line for line in md_text.splitlines() if "|" in line]
+    if len(lines) < 3:
+        raise ValueError("Markdown table format is invalid or incomplete.")
+
+    headers = [h.strip() for h in lines[0].split("|")[1:-1]]
+    test_cases = []
+
+    for line in lines[2:]:  # skip header + separator
+        values = [v.strip() for v in line.split("|")[1:-1]]
+        if len(values) == len(headers):
+            test_case = dict(zip(headers, values))
+            test_cases.append(test_case)
+
+    return test_cases
+
+# Step 4: Fill test cases into Excel template
+def fill_excel_template(test_cases, template_path, output_path):
+    wb = openpyxl.load_workbook(template_path)
+    ws = wb["Testcases"]
+    start_row = 6
+
+    for i, tc in enumerate(test_cases):
+        row = start_row + i
+        ws.cell(row=row, column=2, value=tc.get("Test Case ID"))
+        ws.cell(row=row, column=3, value=tc.get("Preconditions"))
+        ws.cell(row=row, column=4, value=tc.get("Test Condition"))
+        ws.cell(row=row, column=5, value=tc.get("Steps with description"))
+        ws.cell(row=row, column=6, value=tc.get("Expected Result"))
+        ws.cell(row=row, column=7, value=tc.get("Actual Result"))
+        ws.cell(row=row, column=8, value=tc.get("Remarks"))
 
     wb.save(output_path)
 
-# Main function
+# Main execution
 if __name__ == "__main__":
-    srs_path = "SRS.docx"
-    output_path = "Generated_TestCases.xlsx"
-    component_name = "Authentication Module"  # You can change this dynamically
-
-    print("Extracting SRS...")
-    srs_text = extract_srs_text(srs_path)
-
-    print("Generating test cases from Claude...")
-    testcases_text = generate_testcases(srs_text, component_name)
-
-    print("Saving to Excel...")
-    save_to_excel(testcases_text, output_path, component_name)
-
-    print(f"✅ Test cases saved to {output_path}")
+    srs_text = extract_srs_text("SRS.docx")
+    md_testcases = get_testcases_from_claude(srs_text)
+    test_cases = parse_markdown_table(md_testcases)
+    fill_excel_template(test_cases, "TestCases_Template.xlsx", "Generated_TestCases.xlsx")
+    print("✅ Test cases generated successfully: Generated_TestCases.xlsx")
