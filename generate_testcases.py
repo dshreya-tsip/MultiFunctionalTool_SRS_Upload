@@ -26,11 +26,23 @@ def build_prompt(srs_text: str) -> str:
 
         "⚠️ IMPORTANT: Generate the **maximum possible coverage of test cases** from the SRS.\n"
         "- Include **all functional test cases** (for every requirement, feature, rule, and exception).\n"
-        "- Include **all non-functional test cases** (performance, usability, security, reliability, "
-        "compatibility, accessibility, compliance, installation, recovery, etc.).\n"
+        "- Include **all non-functional test cases**:\n"
+        "  • Performance\n"
+        "  • Usability\n"
+        "  • Security\n"
+        "  • Reliability\n"
+        "  • Compatibility\n"
+        "  • Accessibility\n"
+        "  • Compliance\n"
+        "  • Installation\n"
+        "  • Recovery\n"
         "- Include **negative test cases** (invalid inputs, boundary conditions, failure handling).\n"
         "- Include **edge cases, stress cases, and corner cases**.\n"
         "- Include **ad-hoc / exploratory test cases** (unplanned scenarios, random inputs, unusual user flows).\n"
+        "- Include **data validation test cases** (e.g., input formats, required fields, constraints).\n"
+        "- Include **integration test cases** (interactions between modules/components).\n"
+        "- Include **regression test cases** (to verify previously working features still work).\n"
+        "- Include **accessibility test cases** (screen reader support, keyboard navigation, contrast ratios).\n"
         "- Do not skip any scenario implied in the SRS, even if not explicitly written.\n\n"
 
         "🚨 MANDATORY REQUIREMENT:\n"
@@ -43,6 +55,9 @@ def build_prompt(srs_text: str) -> str:
         "  • Invalid/edge IP addresses (e.g., 0.0.0.0, 255.255.255.255, ::, ::1, malformed addresses)\n"
         "  • Performance comparison IPv4 vs IPv6\n"
         "  • Security checks for both IPv4 and IPv6\n\n"
+
+        "✅ You MUST generate **at least 100 test cases** if the SRS is moderately detailed.\n"
+        "If the SRS is short, extrapolate plausible scenarios based on typical systems.\n\n"
 
         "Number test cases sequentially across all categories with IDs like `TC001`, `TC002`, etc.\n"
         "All test cases must be in ONE continuous markdown table with no breaks or section headers.\n\n"
@@ -57,6 +72,7 @@ def build_prompt(srs_text: str) -> str:
 
         "SRS Content:\n" + srs_text
     )
+
 
 
 
