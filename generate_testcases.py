@@ -56,7 +56,7 @@ def build_prompt(srs_text: str) -> str:
         "  • Performance comparison IPv4 vs IPv6\n"
         "  • Security checks for both IPv4 and IPv6\n\n"
 
-        "✅ You MUST generate **at least 100 test cases** if the SRS is moderately detailed.\n"
+        "✅ You MUST generate **at least 200 test cases** if the SRS is moderately detailed.\n"
         "If the SRS is short, extrapolate plausible scenarios based on typical systems.\n\n"
 
         "Number test cases sequentially across all categories with IDs like `TC001`, `TC002`, etc.\n"
